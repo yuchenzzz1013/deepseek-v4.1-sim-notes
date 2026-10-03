@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>DeepSeek-V4.1-Flash — Decode Execution (weight-operation granularity)</title>
+<style>
+  @page { margin: 0; }
+  :root{
+    --ivory:#FAF9F5; --ivory2:#F4F2EC; --line:#DAD5C8; --line2:#C9C2B0;
+    --ink:#2B2823; --ink2:#5C574D; --ink3:#8A8377;
+    --lav-l:#F2EFF9; --lav-s:#B9AEDA;
+    --mint-s:#9CC9B4; --teal-s:#8FB8C4; --cream-s:#CDBE94;
+    --amber-s:#DDAE72; --peach-s:#DD9E8B; --rose-s:#CE9AA8;
+    --indigo:#E4E7F5; --indigo-s:#8C95C9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--ivory); color:var(--ink);
+    font-family:"SF Pro Text","Segoe UI","Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .page{width:1640px; padding:34px 40px 40px;}
+
+  header{border-bottom:1.5px solid var(--line); padding-bottom:16px; margin-bottom:22px;}
+  h1{margin:0 0 6px; font-size:27px; font-weight:650; letter-spacing:-.3px;}
+  h1 small{font-weight:400; color:var(--ink3); font-size:15px; letter-spacing:0;}
+  .sub{color:var(--ink2); font-size:13.5px; line-height:1.62;}
+  .sub b{font-weight:600; color:var(--ink);}
+  .meta{margin-top:11px; display:flex; gap:9px; flex-wrap:wrap;}
+  .chip{font-size:11.5px; padding:3px 10px; border-radius:99px; background:var(--ivory2);
+    border:1px solid var(--line); color:var(--ink2); font-variant-numeric:tabular-nums;}
+  .chip b{color:var(--ink); font-weight:600;}
+
+  .phase{border:1.4px dashed var(--line2); border-radius:16px; padding:14px 18px 16px;
+    margin-bottom:15px; position:relative; background:rgba(255,255,255,.42);}
+  .phase::before{content:attr(data-n); position:absolute; left:-1px; top:-1px;
+    width:30px; height:30px; border-radius:15px 0 12px 0; background:var(--line2); color:#fff;
+    font-size:13px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .ph-title{font-size:14.5px; font-weight:640; margin:0 0 3px 34px; letter-spacing:-.1px;}
+  .ph-title .tag{font-weight:500; font-size:11.5px; color:var(--ink3); margin-left:8px; font-variant-numeric:tabular-nums;}
+  .ph-note{font-size:11.5px; color:var(--ink3); margin:0 0 12px 34px; line-height:1.6;}
+
+  .row{display:flex; align-items:stretch; gap:9px; flex-wrap:wrap;}
+  .row + .row{margin-top:9px;}
+  .w{background:#fff; border:1.2px solid var(--line); border-radius:11px;
+    padding:8px 11px 9px; min-width:150px; flex:0 0 auto; position:relative;}
+  .w .op{font-family:"SF Mono",Consolas,"Cascadia Mono",monospace;
+    font-size:12.5px; font-weight:600; letter-spacing:-.2px; margin-bottom:3px;}
+  .w .dim{font-family:"SF Mono",Consolas,"Cascadia Mono",monospace;
+    font-size:10.5px; color:var(--ink2); line-height:1.5;}
+  .w .par{margin-top:5px; padding-top:5px; border-top:1px dotted var(--line);
+    font-size:10.5px; color:var(--ink3); display:flex; gap:8px; align-items:baseline;
+    font-variant-numeric:tabular-nums; flex-wrap:wrap;}
+  .w .par b{color:var(--ink); font-weight:640; font-size:11px;}
+  .w .dtype{position:absolute; top:-8px; right:8px; font-size:9px; letter-spacing:.4px;
+    font-weight:700; padding:1px 5px; border-radius:4px; background:var(--ivory2);
+    color:var(--ink3); border:1px solid rgba(0,0,0,.06); white-space:nowrap;}
+  .dt-fp8{background:#E4EDF1; color:#4E7C8C;}
+  .dt-fp4{background:#F6E3D8; color:#A9653F;}
+  .dt-fp32{background:#EAE6F5; color:#6B5CA5;}
+  .dt-bf16{background:#E6EFE9; color:#4F8768;}
+  .dt-mem{background:#E7E9F6; color:#5A64A8;}
+
+  .w.lav{background:var(--lav-l); border-color:var(--lav-s);}
+  .w.teal{background:#F1F7F8; border-color:var(--teal-s);}
+  .w.amber{background:#FCF5EC; border-color:var(--amber-s);}
+  .w.mint{background:#F2F8F5; border-color:var(--mint-s);}
+  .w.peach{background:#FCF1ED; border-color:var(--peach-s);}
+  .w.cream{background:#FBF8EF; border-color:var(--cream-s);}
+  .w.rose{background:#FBF1F4; border-color:var(--rose-s);}
+  .w.indigo{background:#F3F4FB; border-color:var(--indigo-s);}
+
+  .flow{display:flex; align-items:center; color:var(--ink3); font-size:15px; padding:0 1px;}
+  .op-badge{font-family:"SF Mono",Consolas,monospace; font-size:10.5px; font-weight:600;
+    background:var(--ivory2); border:1px solid var(--line); border-radius:6px;
+    padding:3px 7px; color:var(--ink2); white-space:nowrap;}
+
+  .note{background:#F0EAD9; border:1.2px solid var(--cream-s); border-radius:11px;
+    padding:10px 14px; font-size:11.5px; line-height:1.65; color:var(--ink2);}
+  .note b{color:var(--ink); font-weight:640;}
+  .warn{background:#FBF0E4; border-color:#E0B584;}
+  .good{background:#EDF5F0; border-color:#A9CDBB;}
+  .fix{background:#F2F5FA; border-color:#A8BBD4;}
+  .key{background:#EEF1FA; border-color:var(--indigo-s);}
+
+  .sl{flex:0 0 142px; display:flex; align-items:center; gap:7px;
+    font-size:11.5px; font-weight:620; color:var(--ink2); padding-right:2px;}
+  .sl span.d{width:9px; height:9px; border-radius:3px; flex:0 0 auto;}
+
+  table.sum{border-collapse:collapse; width:100%; font-size:11.5px; font-variant-numeric:tabular-nums;}
+  table.sum th,table.sum td{border-bottom:1px solid var(--line); padding:4.5px 8px; text-align:right;}
+  table.sum th:first-child,table.sum td:first-child{text-align:left;}
+  table.sum td:nth-child(2){text-align:left; color:var(--ink3); font-size:10.5px;}
+  table.sum td:last-child{text-align:left;}
+  table.sum th{color:var(--ink3); font-weight:600; font-size:11px;}
+  table.sum tr.tot td{border-bottom:none; font-weight:650; color:var(--ink); border-top:1.4px solid var(--line2);}
+  table.sum tr.mid td{border-top:1px solid var(--line2); font-weight:640;}
+  table.sum tr.sub td{color:var(--ink3); font-size:11px;}
+  .bar{display:inline-block; height:9px; border-radius:2px; background:var(--indigo-s); vertical-align:middle;}
+  .foot{margin-top:16px; font-size:10.5px; color:var(--ink3); line-height:1.7;}
+
+  .vs{display:flex; gap:14px; margin-left:34px;}
+  .vs > div{flex:1; border-radius:11px; padding:11px 14px; font-size:11.5px; line-height:1.6;}
+  .vs .a{background:#DCE9EC; border:1.2px solid var(--teal-s);}
+  .vs .b{background:#E8E3F3; border:1.2px solid var(--lav-s);}
+  .vs b{font-weight:650;}
+  .indigobox{border:1.4px solid var(--indigo-s); border-radius:12px; padding:12px 16px; background:rgba(228,231,245,.45);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>DeepSeek-V4.1-Flash · Decode Execution <small>— 粒度到权重运算</small></h1>
+  <div class="sub">
+    <b>单步 decode</b>（n=1，生成 1 个 token）在 40 层骨干上的逐权重算符执行流，含 DSpark 半自回归推测解码。
+    算符/形状取自官方 <b>inference/model.py</b>，维度取自 <b>config.json</b>；流量与参数量由本机脚本按该实现公式现算。
+  </div>
+  <div class="meta">
+    <span class="chip">n=<b>1</b> · 每步 1 token</span>
+    <span class="chip">激活：<b>16.13B</b>（40 层）／<b>16.79B</b>（含 head）</span>
+    <span class="chip">权重流量 <b>15.883 GB</b>/token</span>
+    <span class="chip">FLOPs <b>33.59 G</b>/token</span>
+    <span class="chip">算术强度 <b>2.11</b> FLOP/byte</span>
+    <span class="chip">d=<b>5120</b> · 40 层</span>
+    <span class="chip">experts=<b>384</b> top-<b>6</b></span>
+    <span class="chip">window=<b>128</b> · index_topk=<b>512</b></span>
+    <span class="chip">DSpark block=<b>5</b> · 3 层</span>
+    <span class="chip">GB = <b>10⁹</b> B</span>
+  </div>
+</header>
+
+<!-- ===== 0 ===== -->
+<div class="phase" data-n="0" style="border-style:solid;">
+  <div class="ph-title">prefill 与 decode 的形态差异 <span class="tag">为什么两张图必须分开画</span></div>
+  <div class="vs">
+    <div class="a">
+      <b>Prefill（上另一张图）</b><br>
+      n = T（整段输入）· 20 层 encoder · 激活 ≈8.56B<br>
+      算符是 <b>GEMM</b>（大 M）→ <b>compute-bound</b><br>
+      一次性建好 KV cache 与 top-k 索引
+    </div>
+    <div class="b">
+      <b>Decode（本图）</b><br>
+      n = 1（每步一个 token）· 40 层（enc+dec）<br>
+      激活 <b>16.13B</b>（40 层）／16.79B（含 head）<br>
+      算符退化为 <b>GEMV</b>（M=1）→ <b>memory-bound</b><br>
+      每步只读 cache、追加 1 格、按需重放 SWA
+    </div>
+  </div>
+  <div class="note key" style="margin:12px 0 0 34px;">
+    <b>decode 的瓶颈不是算力，是显存带宽。</b>n=1 时每个权重只乘一个标量，却必须<b>整份从 HBM 读一遍</b>——
+    每参数只摊到 2 FLOP。本机现算：<b>33.59 GFLOP ÷ 15.883 GB = 2.11 FLOP/byte</b>（33.586 ÷ 15.883 = 2.1146），
+    而 H100 的 bf16 稠密脊点约 <b>295 FLOP/byte</b>（989 TFLOPS ÷ 3.35 TB/s）。<b>相差约 140 倍</b>（295 ÷ 2.1146 = 139.5），
+    所以 decode 的优化目标是"少读字节"，不是"少算"。
+  </div>
+</div>
+
+<!-- ===== 1 ===== -->
+<div class="phase" data-n="1">
+  <div class="ph-title">单 token 输入 <span class="tag">n=1 · 全程 M=1</span></div>
+  <div class="ph-note">只读 embedding 的<b>一行</b>（全表 661.9M 的 1/129280），不触碰其他行。位置取 <code>start_pos</code>，无图像融合（图像 span 已在 prefill 期完成）。</div>
+  <div class="row">
+    <div class="w mint"><div class="op">tok_embed（单行 gather）</div>
+      <div class="dim">[1] → [1,5120]</div>
+      <div class="par"><span>流量</span><b>10 KB</b><span>（V·d 全表 661.9M，只读 1 行）</span></div>
+      <span class="dtype dt-mem">仅 1 行</span></div>
+    <div class="flow">→</div>
+    <div class="w mint"><div class="op">hc_expand</div>
+      <div class="dim">[1,5120] → [1,4,5120]</div>
+      <div class="par"><span>reshape</span><b>0</b></div><span class="dtype dt-bf16">view</span></div>
+    <div class="flow">→</div>
+    <div class="w cream"><div class="op">位置与 RoPE</div>
+      <div class="dim">freqs_cis[start_pos]；压缩 KV 用 compress_rope_theta</div>
+      <div class="par"><span>每步前进 1 格</span><b>0</b></div><span class="dtype dt-bf16">rotary</span></div>
+  </div>
+  <div class="ph-note" style="margin:11px 0 0 34px;">
+    ⤷ 注意：<code>get_window_topk_idxs</code> / <code>get_dspark_topk_idxs</code> 在 <code>start_pos &gt; 0</code> 时走<b>环形缓冲</b>分支，
+    每个 query 看整个 window（最旧优先），与 prefill 的"每 query 各看各的因果窗口"完全不同。
+  </div>
+</div>
+
+<!-- ===== 2 ===== -->
+<div class="phase" data-n="2">
+  <div class="ph-title">Engram n-gram 写回 <span class="tag">L1 / L14 · 每步重算哈希</span></div>
+  <div class="ph-note">哈希 id 由<b>最近 3 个历史 token 的压缩 id</b> 与当前 token 决定，每步都要重算（<code>cache</code> 里已存好历史，只追加当前格）。<b>查表只命中 24 行</b>——这是 engram 25600 维写回里最省的一环。</div>
+  <div class="row">
+    <div class="w rose"><div class="op">NgramHashState</div>
+      <div class="dim">cache[start_pos] = 压缩 id；3 lookback XOR → %prime</div>
+      <div class="par"><span>流量</span><b>≈0</b></div><span class="dtype dt-fp32">int64</span></div>
+    <div class="flow">→</div>
+    <div class="w cream"><div class="op">ParallelEngramEmbedding（查表 24 行）</div>
+      <div class="dim">[1,24] → [1,24,256]</div>
+      <div class="par"><span>流量</span><b>6.1 KB</b><span>（全表 196.6B 只读 24 行）</span></div>
+      <span class="dtype dt-mem">仅 24 行</span></div>
+    <div class="flow">→</div>
+    <div class="w teal"><div class="op">engram.wkv</div>
+      <div class="dim">[1,6144] → [1,25600]　<b>GEMV</b></div>
+      <div class="par"><span>参数 157.29M/层</span><b>157.3 MB / 层</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">gate = σ(±√|dot|)</div>
+      <div class="dim">q_weight·k_weight ⊙ x·key</div>
+      <div class="par"><span>2·hc·d</span><b>164 KB / 层</b></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">＋</div>
+    <div class="w mint"><div class="op">h + gate·value</div>
+      <div class="dim">[1,4,5120] 残差写回</div>
+      <div class="par"><span>无权重</span><b>0</b></div><span class="dtype dt-bf16">bf16</span></div>
+  </div>
+  <div class="note" style="margin:11px 0 0 34px;">
+    <b>25600 怎么变成 20480 的（此前漏了这一步）：</b><code>wkv</code> 输出 <b>25600 = hc·d + d = 20480 + 5120</b>，
+    被 <code>kv.split([hc*dim, dim])</code> 切成两支 ——
+    <b>key</b> 取前 <b>20480 = 4×5120</b>（每个 hc copy 一个 key），<b>value</b> 取后 <b>5120</b>（4 个 copy 共享）。
+    门控 <code>gate</code> 形状 [1,4] 来自 key 支；<code>h + gate·value</code> 里 <code>value</code> 广播到 4 份 copy，故回到 [1,4,5120]。<br>
+    官方口径：<b>Engram = 196B 参数，"sparsely accessed via token-based lookup"</b>。本机算其纯 fp8 数据为
+    <b>196.62B</b>（含 scale 202.76B），吻合。它<b>不计入 552B backbone</b>，也<b>不构成每步的带宽负担</b>（只读 24 行）。
+  </div>
+</div>
+
+<!-- ===== 3 ===== -->
+<div class="phase" data-n="3" style="border-color:var(--indigo-s); background:rgba(228,231,245,.22);">
+  <div class="ph-title">Decode Block × 40 <span class="tag">每步跑满 40 层 · 激活 16.13B ≈ 官方 16B</span></div>
+  <div class="ph-note">
+    结构与 prefill 同构（HC → 稀疏注意力 → MoE），但三处形态变了：
+    <b>① 所有 Linear 退化为 GEMV；② KV 从 cache 读、只追加 1 格；③ top-k 索引按 CSA2 模式复用或重算</b>。
+  </div>
+
+  <div class="row">
+    <div class="sl"><span class="d" style="background:var(--lav-s)"></span>HC（先算系数）</div>
+    <div class="w lav"><div class="op">hc_mixes · F.linear(hc_fn)</div>
+      <div class="dim">[1,20480] → [1,24]　<b>GEMV</b></div>
+      <div class="par"><span>491.5K / 次 × 2 次</span><b>3.9 MB / 层</b></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">hc_split_sinkhorn</div>
+      <div class="dim">[1,24] → pre[4] post[4] comb[4,4]</div>
+      <div class="par"><span>20 轮迭代 · 可学参数</span><b>27 个</b><span>（base 24 + scale 3）</span></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">hc_pre → attn_norm</div>
+      <div class="dim">Σ pre_mix ⊙ x → [1,5120] → RMSNorm</div>
+      <div class="par"><span>用上一层 FFN 的 pre_mix</span><b>10 KB / 层</b></div><span class="dtype dt-bf16">bf16</span></div>
+  </div>
+
+  <div class="row" style="margin-top:13px;">
+    <div class="sl"><span class="d" style="background:var(--teal-s)"></span>稀疏注意力</div>
+    <div class="w teal"><div class="op">wq_a → q_norm → wq_b</div>
+      <div class="dim">[1,5120]→[1,1280]→[1,64,512]　<b>GEMV</b></div>
+      <div class="par"><span>6.55M + 1.28K + 41.94M</span><b>48.5 MB / 层</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">→</div>
+    <div class="w teal"><div class="op">wkv → kv_norm → RoPE</div>
+      <div class="dim">[1,5120] → [1,512]</div>
+      <div class="par"><span>2.62M + 512</span><b>2.6 MB / 层</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">→</div>
+    <div class="w indigo"><div class="op">写入 SWA 环</div>
+      <div class="dim">window_kv_cache[start_pos % 128] = kv</div>
+      <div class="par"><span>覆盖 1 格，<b>不增长</b></span><b>0</b></div><span class="dtype dt-mem">ring 128</span></div>
+    <div class="flow">→</div>
+    <div class="w rose"><div class="op">compressor（仅 KV 源层）</div>
+      <div class="dim">积满 r 个 token 才产一格：L2/L8/L14 每 2 步、L20 每步</div>
+      <div class="par"><span>未满组暂存 kv_state/score_state</span><b>条件触发</b></div><span class="dtype dt-fp32">r=2 fp32 · r=1 bf16</span></div>
+  </div>
+
+  <div class="row" style="margin-top:9px;">
+    <div class="sl"><span class="d" style="background:var(--indigo-s)"></span>CSA2 三种模式</div>
+    <div class="w indigo"><div class="op">Full（decoder 只有 L20）</div>
+      <div class="dim">重算本次 index 分数；<code>select_candidate_blocks</code> 建候选池 2048×8</div>
+      <div class="par"><span>decoder 首个 index 层</span><b>见 indexer</b></div><span class="dtype dt-fp4">q/k act fp4</span></div>
+    <div class="flow">→</div>
+    <div class="w indigo"><div class="op">Reindex（{24,28,32,36}）</div>
+      <div class="dim">用<b>自己的</b> wq_b/weights_proj 重打分，但只在 L20 的候选池内</div>
+      <div class="par"><span>候选掩码后 top-512</span><b>43.5 MB / 层</b></div><span class="dtype dt-fp8">w fp8/bf16</span></div>
+    <div class="flow">→</div>
+    <div class="w indigo"><div class="op">Reuse（其余 decoder 层）</div>
+      <div class="dim"><b>直接复用上一层已算好的 topk_idxs</b>，本层 indexer 不跑</div>
+      <div class="par"><span>零增量带宽</span><b>0</b></div><span class="dtype dt-mem">复用索引</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">sparse_attn(q, [win ‖ comp], sink)</div>
+      <div class="dim">窗口 128 槽 ＋ 压缩位 ≤512 · sink[64]</div>
+      <div class="par"><span>读 cache + 压缩 KV 潜向量</span><b>890 B/token 口径</b></div><span class="dtype dt-fp32">sink fp32</span></div>
+  </div>
+
+  <div class="row" style="margin-top:9px;">
+    <div class="sl"></div>
+    <div class="w lav"><div class="op">RoPE⁻¹ → wo_a → wo_b</div>
+      <div class="dim">einsum [1,8,4096]×[8,1024,4096]→[1,8,1024]；[1,8192]→[1,5120]　<b>GEMV</b></div>
+      <div class="par"><span>33.55M + 41.94M</span><b>109.5 MB / 层</b></div><span class="dtype dt-bf16">wo_a bf16</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">hc_post</div>
+      <div class="dim">post⊙x ⊕ Σ comb⊙residual → [1,4,5120]</div>
+      <div class="par"><span>无权重</span><b>0</b></div><span class="dtype dt-bf16">bf16</span></div>
+  </div>
+
+  <div class="row" style="margin-top:13px;">
+    <div class="sl"><span class="d" style="background:var(--amber-s)"></span>MoE FFN</div>
+    <div class="w mint"><div class="op">ffn_norm</div>
+      <div class="dim">[1,5120] RMSNorm</div>
+      <div class="par"><span>d</span><b>10 KB</b></div><span class="dtype dt-bf16">bf16</span></div>
+    <div class="flow">→</div>
+    <div class="w amber"><div class="op">gate.weight（全量读）</div>
+      <div class="dim">[1,5120] → [1,384]　<b>GEMV</b></div>
+      <div class="par"><span>E·d = 1.97M，<b>必须全读</b></span><b>7.9 MB / 层</b></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w amber"><div class="op">√softplus → +bias → top-6</div>
+      <div class="dim">scores/gate_temp → 选 6 个专家</div>
+      <div class="par"><span>bias 只选不缩放</span><b>1.5 KB</b></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w rose"><div class="op">按 expert id 做 weight gather</div>
+      <div class="dim">只把被选中的 6 个专家的权重从 HBM 拉进来</div>
+      <div class="par"><span>543.58B 里只读 6/384</span><b>0.15% 的专家权重</b></div><span class="dtype dt-mem">稀疏 gather</span></div>
+  </div>
+
+  <div class="row" style="margin-top:9px;">
+    <div class="sl"></div>
+    <div class="w amber"><div class="op">Expert.w1 / w3</div>
+      <div class="dim">[1,5120] → [1,2304] ×2　<b>GEMV</b></div>
+      <div class="par"><span>23.59M / expert</span><b>11.8 MB / expert</b></div><span class="dtype dt-fp4">fp4</span></div>
+    <div class="flow">→</div>
+    <div class="w amber"><div class="op">clamp(±10) · silu ⊙ up</div>
+      <div class="dim">gate 只截上界，up 双侧</div>
+      <div class="par"><span>swiglu_limit=10.0</span><b>0</b></div><span class="dtype dt-fp32">fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w amber"><div class="op">Expert.w2 · ⊙ weight</div>
+      <div class="dim">[1,2304] → [1,5120]　<b>GEMV</b></div>
+      <div class="par"><span>11.80M / expert</span><b>5.9 MB / expert</b></div><span class="dtype dt-fp4">fp4</span></div>
+    <div class="op-badge">6 个专家合计<br><b>106.2 MB / 层</b></div>
+    <div class="flow">＋</div>
+    <div class="w peach"><div class="op">shared_experts（每 token 都跑）</div>
+      <div class="dim">[1,5120] → [1,2304] → [1,5120]　<b>GEMV</b></div>
+      <div class="par"><span>35.39M，fp8</span><b>35.4 MB / 层</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">→</div>
+    <div class="w lav"><div class="op">hc_post（FFN）＋ 下一个 hc_mixes</div>
+      <div class="dim">展开回 [1,4,5120]；产出下个子层的 pre_mix</div>
+      <div class="par"><span>无权重</span><b>0</b></div><span class="dtype dt-bf16">bf16</span></div>
+  </div>
+
+  <div class="note warn" style="margin:12px 0 0 34px;">
+    <b>这里藏着 decode 最重要的一个反直觉点：</b><br>
+    路由专家<b>总参数 543.58B</b>，但每 token 只激活 6/384 → 实际只搬运 <b>≈106.2 MB/层</b>（fp4 半字节）。
+    40 层加起来 <b>≈4.25 GB</b>，<b>只占总流量 15.883 GB 的 27%</b>。<br>
+    真正贵的是<b>必须全量读、无法稀疏化</b>的部分：attention（6.41 GB，40%）与 <b>lm_head（2.65 GB，17%）</b>。
+    换句话说，<b>543.58B 的专家参数不是 decode 的瓶颈，读不满的稠密权重才是</b>。
+  </div>
+</div>
+
+<!-- ===== 4 ===== -->
+<div class="phase" data-n="4">
+  <div class="ph-title">输出头 <span class="tag">每步一次 · 16.7% 流量</span></div>
+  <div class="row">
+    <div class="w lav"><div class="op">hc_pre（末层）</div>
+      <div class="dim">[1,4,5120] → [1,5120]</div>
+      <div class="par"><span>无权重</span><b>0</b></div><span class="dtype dt-bf16">bf16</span></div>
+    <div class="flow">→</div>
+    <div class="w mint"><div class="op">final norm</div>
+      <div class="dim">RMSNorm(5120)</div>
+      <div class="par"><span>d</span><b>10 KB</b></div><span class="dtype dt-bf16">bf16</span></div>
+    <div class="flow">→</div>
+    <div class="w peach"><div class="op">lm_head（fp32 全量）</div>
+      <div class="dim">[1,5120] → [1,129280]　<b>GEMV</b></div>
+      <div class="par"><span>V·d = 661.9M，<b>必须全读</b></span><b>2.648 GB</b></div>
+      <span class="dtype dt-mem">16.7% 流量</span></div>
+    <div class="flow">→</div>
+    <div class="w cream"><div class="op">sample (Gumbel-max)</div>
+      <div class="dim">logits/T → probs/Exp(1) → argmax</div>
+      <div class="par"><span>无权重</span><b>0</b></div><span class="dtype dt-fp32">fp32</span></div>
+  </div>
+  <div class="ph-note" style="margin:11px 0 0 34px;">
+    ⤷ <code>lm_head</code> 权重常驻 <b>fp32</b>（<code>ParallelHead</code> 以 fp32 建），因此 661.9M 参数要占 <b>2.648 GB</b>。
+    若改 bf16 会降到 1.324 GB —— 这是 decode 里最直接的带宽优化点之一。
+  </div>
+</div>
+
+<!-- ===== 5 ===== -->
+<div class="phase" data-n="5">
+  <div class="ph-title">DSpark 推测解码：半自回归草稿 + 置信度调度验证 <span class="tag">decode 专属 · 不是 prefill 的一部分</span></div>
+  <div class="ph-note">
+    <code>forward_spec</code> 在 <b>start_pos == 0 时直接 return None</b>，所以它只在 decode 生效。
+    官方描述为 <b>semi-autoregressive draft generation with confidence-scheduled verification</b>：一次草拟
+    <code>block_size = 5</code> 个 token，再由主模型成批验证。
+  </div>
+
+  <div class="indigobox">
+    <div class="row">
+      <div class="w rose"><div class="op">forward_embed(main_hidden, ids)</div>
+        <div class="dim">e_proj/h_proj 融合草稿 token 与主模型隐状态</div>
+        <div class="par"><span>e_proj + h_proj 各 16.78M</span><b>33.6 MB</b></div><span class="dtype dt-fp8">fp8</span></div>
+      <div class="flow">→</div>
+      <div class="w rose"><div class="op">DSparkBlock × 3（块内 KV cache）</div>
+        <div class="dim">window_kv_cache[128] ＋ block 区 [start_pos%128 : +5]</div>
+        <div class="par"><span>topk = window128 ‖ block5</span><b>3 层</b></div><span class="dtype dt-fp4">fp4 exp</span></div>
+      <div class="flow">→</div>
+      <div class="w rose"><div class="op">DSparkAttention（继承 Attention）</div>
+        <div class="dim">q 只来自草稿 block；K 拼 <b>主模型已算好的 window</b> + 草稿自身</div>
+        <div class="par"><span>compress_ratio 断言为 0（全滑窗）</span><b>GEMV</b></div><span class="dtype dt-fp8">fp8 KV</span></div>
+      <div class="flow">→</div>
+      <div class="w rose"><div class="op">DSparkMoE（128 exp, top-3）</div>
+        <div class="dim">比主干的 384/top-6 小得多</div>
+        <div class="par"><span>dspark_n_routed_experts=128</span><b>top-3 激活</b></div><span class="dtype dt-fp4">fp4</span></div>
+    </div>
+    <div class="row" style="margin-top:9px;">
+      <div class="w rose"><div class="op">markov head</div>
+        <div class="dim">ParallelEmbedding(V,256) ＋ ParallelHead(V,256)</div>
+        <div class="par"><span>2×(V·256)</span><b>66.19M</b></div><span class="dtype dt-fp32">fp32</span></div>
+      <div class="flow">＋</div>
+      <div class="w rose"><div class="op">confidence head</div>
+        <div class="dim">proj: [1, 5120+256] → [1,1]</div>
+        <div class="par"><span>d + markov_rank → 1</span><b>5.4K</b></div><span class="dtype dt-fp32">fp32</span></div>
+      <div class="flow">→</div>
+      <div class="w indigo"><div class="op">confidence-scheduled 验证</div>
+        <div class="dim">按置信度决定接受草稿的前几个 token，其余丢弃重跑</div>
+        <div class="par"><span>dspark_noise_token_id 作占位</span><b>主模型批量验证</b></div><span class="dtype dt-mem">调度</span></div>
+    </div>
+  </div>
+
+  <div class="note" style="margin:12px 0 0 34px;">
+    <b>成本口径（此前写错了，这里改正）：</b>DSpark 每层 ≈ <b>319.3 MB</b>，3 层合计 <b>0.958 GB</b>。
+    草稿的 5 个位置是<b>块并行</b>的（<code>topk = window128 ‖ block5</code>，5 个位置一次性进同一个 KV 区），
+    所以<b>一个 draft block 就是 0.958 GB</b>，不是 5×0.958。此前写的 4.79 GB 是把它误当成 5 步自回归串行累加，已删除。<br>
+    <b>价值所在：</b>0.958 GB 的草稿让主模型一次验证最多 5 个 token。注意本图的 15.883 GB 是<b>单 token 单步</b>口径；
+    验证一次 draft 时主模型前向的 M=5，权重流量<b>不变</b>（仍是 15.883 GB），但摊到 5 个 token 上 —— 这正是推测解码的收益来源。<br>
+    <b>注意：</b>DSpark 是<b>额外</b>于 40 层主干的 3 层（<code>n_mtp_layers=3</code>，层号 40–42）；
+    主干的 16.13B 激活量<b>不含</b>这 3 层。
+  </div>
+</div>
+
+<!-- ===== 6 ===== -->
+<div class="phase" data-n="6" style="border-style:solid;">
+  <div class="ph-title">每 token 权重流量（本机现算） <span class="tag">decode 的真实成本表</span></div>
+  <table class="sum">
+    <tr><th>单元</th><th>精度</th><th>活跃参数</th><th>每 token 流量</th><th>占比</th><th></th></tr>
+    <tr class="sub"><td>attention ×40（wq_a/wq_b/wkv/wo_b fp8 ＋ wo_a bf16 ＋ sink fp32）</td><td>fp8/bf16/fp32</td><td>5,064.7 M</td><td>6.407 GB</td><td>40.3%</td><td><span class="bar" style="width:161px"></span></td></tr>
+    <tr class="sub"><td>MoE ×40（router fp32 ＋ 6 routed fp4 ＋ fp4 scale ＋ shared fp8）</td><td>fp32/fp4/fp8</td><td>9,987.7 M</td><td>6.242 GB</td><td>39.3%</td><td><span class="bar" style="width:157px"></span></td></tr>
+    <tr class="sub"><td>lm_head（fp32 全量 V×d）</td><td>fp32</td><td>661.9 M</td><td>2.648 GB</td><td>16.7%</td><td><span class="bar" style="width:67px"></span></td></tr>
+    <tr class="sub"><td>engram.wkv ×2 ＋ q/k_weight</td><td>fp8/fp32</td><td>314.7 M</td><td>314.9 MB</td><td>2.0%</td><td><span class="bar" style="width:8px"></span></td></tr>
+    <tr class="sub"><td>hyper-connections ×40（fp32）</td><td>fp32</td><td>39.3 M</td><td>157.3 MB</td><td>1.0%</td><td><span class="bar" style="width:4px"></span></td></tr>
+    <tr class="sub"><td>compressor（4 层）＋ indexer（8 层配置，decoder 内 5 层实跑）</td><td>fp32/bf16/fp8</td><td>61.9 M</td><td>113.3 MB</td><td>0.7%</td><td><span class="bar" style="width:3px"></span></td></tr>
+    <tr class="sub"><td>attn_norm / ffn_norm / kv_norm / q_norm / k_norm</td><td>bf16</td><td>409.6 K</td><td>0.8 MB</td><td>0.005%</td><td></td></tr>
+    <tr class="sub"><td>engram 查表（24 行 ×2）＋ tok_embed 单行 ＋ final norm</td><td>fp8/bf16</td><td>17.4 K</td><td>≈0.03 MB</td><td>≈0%</td><td></td></tr>
+    <tr class="mid"><td><b>40 层本体 ＋ 输入输出小项</b></td><td></td><td><b>16,131.3 M</b></td><td><b>13.236 GB</b></td><td>83.3%</td><td></td></tr>
+    <tr class="tot"><td>单步 decode 合计（含 lm_head）</td><td></td><td>16,793.2 M</td><td>15.883 GB</td><td>100%</td><td></td></tr>
+    <tr class="sub"><td>DSpark（另计，3 层 × 319.3 MB，块并行）</td><td>fp4/fp8/fp32</td><td>939.4 M</td><td>0.958 GB</td><td>—</td><td></td></tr>
+  </table>
+
+  <div class="note fix" style="margin-top:13px;">
+    <b>激活参数的口径（此前页眉与表格打架，现统一）：</b><br>
+    · <b>16,131.3 M = 16.13 B</b> —— 40 层骨干本体（含 attention / HC / norms / MoE / indexer / compressor / engram.wkv）＋ token embedding。<br>
+    · <b>16,793.2 M = 16.79 B</b> —— 再计入只跑一次的 <b>lm_head</b>（661.9 M）。decode 每步确实要跑 head 才能出 logits，故这是<b>单步全量</b>。<br>
+    · 上一版页眉写 16.8B、表格却不列 lm_head 行，导致读者无法把两者对上。官方记 <b>16B</b> 与 <b>16.13B</b> 更接近（差 0.8%），
+    属取整范围，不再用"≈"含糊带过。<br>
+    · FLOPs 同理：<b>2 × 16,793.2 M = 33.586 → 33.59 GFLOP</b>（含 head）。上一版把 head 排除在 FLOPs 之外却把它的字节算进流量，属内部不一致；本版一律含 head。
+  </div>
+
+  <div class="note key" style="margin-top:11px;">
+    <b>带宽结论（与硬件无关的那部分）：</b><br>
+    ① 每 token 需搬运 <b>15.883 GB</b>，产出 <b>33.59 GFLOP</b> → 算术强度 <b>2.11 FLOP/byte</b>（33.586 ÷ 15.883 = 2.1146）。<br>
+    ② H100 <b>bf16 稠密</b>脊点 <b>295 FLOP/byte</b>（989 TF ÷ 3.35 TB/s）→ <b>低约 140 倍</b>（295 ÷ 2.1146 = 139.5）。<br>
+    ③ 因此单步延迟 ≈ <b>15.883 GB ÷ 显存带宽</b>。此式不含 KV cache 读取、激活搬运与 kernel launch 开销，是<b>下界</b>。<br>
+    ④ 优化顺序应为：<b>lm_head 降 bf16（−1.324 GB）→ wo_a 降 fp8（−1.342 GB）→ 让更多层走 Reuse（省 indexer）</b>；
+    动专家数量收益很小（全部专家只占 27%）。
+  </div>
+
+  <div class="note warn" style="margin-top:11px;">
+    <b>需注意的口径与不确定项：</b><br>
+    ① <b>"decode 跑满 40 层"是推断</b>：官方仅给"decode 激活 16B"，未说明层数。本机按 40 层算得 <b>16.13B</b> 与之吻合，故采用；
+    但 CED 下 encoder 在 decode 时是否需要为新 token 重跑，<b>参考实现里没有代码级区分</b>，无法证实。上一张 prefill 图同此。<br>
+    ② <b>脊点比较的精度错配</b>：989 TFLOPS 是 bf16 稠密算力，而权重主体是 fp8/fp4。用 bf16 脊点比混合精度负载会<b>低估</b> gap，
+    故 140 倍是<b>保守</b>的数量级参照；H100 亦不支持 fp4。严格脊点应按实际可达吞吐除以实际带宽定义。<br>
+    ③ <b>本表未计入</b>：KV cache 的读取流量、激活的搬运，以及 fp8 权重的 scale 张量（仅 fp4 专家 scale 计入了，40 层共 0.265 GB）。<br>
+    ④ <b>890 B/token</b> 为 model card 引用值（global KV cache 总占用），非本图推导。<br>
+    ⑤ <b>DSpark 半自回归</b>与 <b>Engram 196B</b> 均为 model card 原文表述；<code>block_size=5</code> 的成块验证细节未在参考实现中给出
+    （<code>forward_spec</code> 只实现了草稿前向）。<br>
+    ⑥ <b>单位</b>：全篇 GB/MB 均按 <b>10⁹ / 10⁶ 字节</b>（十进制）。若按 GiB 计，15.883 GB = 14.79 GiB、2.648 GB = 2.466 GiB，
+    与显存标称值（GiB）比较时约有 7% 差异。
+  </div>
+
+  <div class="note good" style="margin-top:11px;">
+    <b>本轮复审的裁决结果（逐条复算）：</b><br>
+    <b>采纳并已改：</b>算术强度 2.03 → <b>2.11</b>，连带 FLOPs 31.68 → <b>33.59 G</b>、148 倍 → <b>140 倍</b>
+    （根因：FLOPs 漏算 lm_head，与字节口径不一致）；wo_a 降 fp8 省 <b>0.67 → 1.342 GB</b>（实为 1.342 B 参数 × 1 B）；
+    输出头标题 <b>21% → 16.7%</b>；<b>16.8B → 16.13B / 16.79B</b> 并把 lm_head 单列成行；
+    DSpark 删除 <b>4.79 GB</b> 的错误累加，明确为<b>块并行 0.958 GB</b>；engram 补 <b>25600 = 20480 + 5120 的 split</b> 步骤；
+    indexer 标注<b>"8 层配置／decoder 内 5 层实跑"</b>；"541B" 笔误统一为 543.58B；"27 / 次"补单位为 <b>27 个可学参数</b>；
+    脚注声明 <b>GB = 10⁹ B</b>；脊点比较补注精度错配。<br>
+    <b>经复算不成立，未改：</b><br>
+    <b>① MoE 流量 6.242 GB 是对的</b>——复审的 5.98 GB 漏算了 <b>fp4 专家的 scale 张量</b>（单层 6.64 MB × 40 = 0.265 GB），
+    <code>model.py</code> 给每个 fp4 Linear 都注册了 <code>scale</code>，必须计入读带宽。<br>
+    <b>②「148 倍与 2.03 不自洽」不成立</b>——1.996 四舍五入正是 2.00，295/2.00 = 147.5 ≈ 148；
+    该条的前提（2.03）源于我上一版的 FLOPs 错误，修正后为 2.11 → 140 倍，建议本身失去了对象。
+  </div>
+</div>
+
+<div class="foot">
+  数据来源：<b>deepseek-ai/DeepSeek-V4.1-Flash</b> 的 model card、<code>config.json</code>、<code>inference/config.json</code>、
+  <code>inference/model.py</code>、<code>inference/vision.py</code>、<code>inference/engram.py</code>（本机下载后逐行核对）。
+  「890 bytes per token」与「552B / prefill 8B / decode 16B」均引自 model card 原文，非本图推导。<br>
+  参数量与字节流量由本机脚本按参考实现的算符公式与各模块 dtype 现算；dtype 依据 config 的 <code>quantization_config</code>
+  （fp8 e4m3 / block 32×32 / ue8m0，experts=fp4）与代码中显式 <code>dtype=</code> 参数。<br>
+  Decode 约定：n=1，每步一个 token；SWA 环与压缩 KV 按 <code>start_pos</code> 追加；top-k 索引按 CSA2 的 Full/Reindex/Reuse 模式复用或重算。<br>
+  单位口径：GB = 10⁹ 字节，MB = 10⁶ 字节。
+</div>
+
+</div>
+</body>
+</html>

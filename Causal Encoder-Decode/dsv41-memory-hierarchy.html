@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>DeepSeek-V4.1-Flash — Memory / Cache Hierarchy</title>
+<style>
+  @page { margin: 0; }
+  :root{
+    --ivory:#FAF9F5; --ivory2:#F4F2EC; --line:#DAD5C8; --line2:#C9C2B0;
+    --ink:#2B2823; --ink2:#5C574D; --ink3:#8A8377;
+    --lav-l:#F2EFF9; --lav-s:#B9AEDA;
+    --mint-s:#9CC9B4; --teal-s:#8FB8C4; --cream-s:#CDBE94;
+    --amber-s:#DDAE72; --peach-s:#DD9E8B; --rose-s:#CE9AA8;
+    --indigo:#E4E7F5; --indigo-s:#8C95C9;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--ivory); color:var(--ink);
+    font-family:"SF Pro Text","Segoe UI","Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .page{width:1640px; padding:34px 40px 40px;}
+
+  header{border-bottom:1.5px solid var(--line); padding-bottom:16px; margin-bottom:22px;}
+  h1{margin:0 0 6px; font-size:27px; font-weight:650; letter-spacing:-.3px;}
+  h1 small{font-weight:400; color:var(--ink3); font-size:15px; letter-spacing:0;}
+  .sub{color:var(--ink2); font-size:13.5px; line-height:1.62;}
+  .sub b{font-weight:600; color:var(--ink);}
+  .meta{margin-top:11px; display:flex; gap:9px; flex-wrap:wrap;}
+  .chip{font-size:11.5px; padding:3px 10px; border-radius:99px; background:var(--ivory2);
+    border:1px solid var(--line); color:var(--ink2); font-variant-numeric:tabular-nums;}
+  .chip b{color:var(--ink); font-weight:600;}
+
+  .phase{border:1.4px dashed var(--line2); border-radius:16px; padding:14px 18px 16px;
+    margin-bottom:15px; position:relative; background:rgba(255,255,255,.42);}
+  .phase::before{content:attr(data-n); position:absolute; left:-1px; top:-1px;
+    width:30px; height:30px; border-radius:15px 0 12px 0; background:var(--line2); color:#fff;
+    font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .ph-title{font-size:14.5px; font-weight:640; margin:0 0 3px 34px; letter-spacing:-.1px;}
+  .ph-title .tag{font-weight:500; font-size:11.5px; color:var(--ink3); margin-left:8px; font-variant-numeric:tabular-nums;}
+  .ph-note{font-size:11.5px; color:var(--ink3); margin:0 0 12px 34px; line-height:1.6;}
+
+  .row{display:flex; align-items:stretch; gap:9px; flex-wrap:wrap;}
+  .row + .row{margin-top:9px;}
+  .w{background:#fff; border:1.2px solid var(--line); border-radius:11px;
+    padding:8px 11px 9px; min-width:150px; flex:0 0 auto; position:relative;}
+  .w .op{font-family:"SF Mono",Consolas,"Cascadia Mono",monospace;
+    font-size:12.5px; font-weight:600; letter-spacing:-.2px; margin-bottom:3px;}
+  .w .dim{font-family:"SF Mono",Consolas,"Cascadia Mono",monospace;
+    font-size:10.5px; color:var(--ink2); line-height:1.5;}
+  .w .par{margin-top:5px; padding-top:5px; border-top:1px dotted var(--line);
+    font-size:10.5px; color:var(--ink3); display:flex; gap:8px; align-items:baseline;
+    font-variant-numeric:tabular-nums; flex-wrap:wrap;}
+  .w .par b{color:var(--ink); font-weight:640; font-size:11px; font-variant-numeric:tabular-nums;}
+  .w .dtype{position:absolute; top:-8px; right:8px; font-size:9px; letter-spacing:.4px;
+    font-weight:700; padding:1px 5px; border-radius:4px; background:var(--ivory2);
+    color:var(--ink3); border:1px solid rgba(0,0,0,.06); white-space:nowrap;}
+  .dt-fp8{background:#E4EDF1; color:#4E7C8C;}
+  .dt-fp4{background:#F6E3D8; color:#A9653F;}
+  .dt-fp32{background:#EAE6F5; color:#6B5CA5;}
+  .dt-bf16{background:#E6EFE9; color:#4F8768;}
+  .dt-mem{background:#E7E9F6; color:#5A64A8;}
+  .dt-ssd{background:#EDE7E0; color:#8A7256;}
+  .dt-mix{background:#ECEAE4; color:#6E685C;}
+
+  .w.lav{background:var(--lav-l); border-color:var(--lav-s);}
+  .w.teal{background:#F1F7F8; border-color:var(--teal-s);}
+  .w.amber{background:#FCF5EC; border-color:var(--amber-s);}
+  .w.mint{background:#F2F8F5; border-color:var(--mint-s);}
+  .w.peach{background:#FCF1ED; border-color:var(--peach-s);}
+  .w.cream{background:#FBF8EF; border-color:var(--cream-s);}
+  .w.rose{background:#FBF1F4; border-color:var(--rose-s);}
+  .w.indigo{background:#F3F4FB; border-color:var(--indigo-s);}
+
+  .flow{display:flex; align-items:center; color:var(--ink3); font-size:15px; padding:0 1px;}
+  .op-badge{font-family:"SF Mono",Consolas,monospace; font-size:10.5px; font-weight:600;
+    background:var(--ivory2); border:1px solid var(--line); border-radius:6px;
+    padding:3px 7px; color:var(--ink2); white-space:nowrap;}
+
+  .note{background:#F0EAD9; border:1.2px solid var(--cream-s); border-radius:11px;
+    padding:10px 14px; font-size:11.5px; line-height:1.65; color:var(--ink2);}
+  .note b{color:var(--ink); font-weight:640;}
+  .warn{background:#FBF0E4; border-color:#E0B584;}
+  .good{background:#EDF5F0; border-color:#A9CDBB;}
+  .fix{background:#F2F5FA; border-color:#A8BBD4;}
+  .key{background:#EEF1FA; border-color:var(--indigo-s);}
+
+  table.sum{border-collapse:collapse; width:100%; font-size:11.5px; font-variant-numeric:tabular-nums;}
+  table.sum th,table.sum td{border-bottom:1px solid var(--line); padding:4.5px 8px; text-align:right;}
+  table.sum th:first-child,table.sum td:first-child{text-align:left;}
+  table.sum td:nth-child(2){text-align:left; color:var(--ink3); font-size:10.5px;}
+  table.sum th{color:var(--ink3); font-weight:600; font-size:11px;}
+  table.sum tr.tot td{border-bottom:none; font-weight:650; color:var(--ink); border-top:1.4px solid var(--line2);}
+  table.sum tr.mid td{border-top:1px solid var(--line2); font-weight:640;}
+  table.sum tr.dim td{color:var(--ink3);}
+  .foot{margin-top:16px; font-size:10.5px; color:var(--ink3); line-height:1.7;}
+
+  /* ---- hierarchy ladder (color bands) ---- */
+  .lad{display:flex; flex-direction:column; gap:0; margin:0 0 4px 34px;}
+  .lad .tier{display:flex; align-items:center; gap:12px; padding:9px 14px; border-radius:10px;
+    border:1.3px solid var(--line2); font-size:12px;}
+  .lad .tier .n{flex:0 0 26px; height:26px; border-radius:8px; display:flex; align-items:center;
+    justify-content:center; font-size:11.5px; font-weight:700; color:#fff; background:var(--indigo-s);}
+  .lad .tier .t{flex:0 0 190px; font-weight:650;}
+  .lad .tier .d{flex:1; color:var(--ink2); font-size:11.5px; line-height:1.5;}
+  .lad .tier .v{flex:0 0 272px; text-align:right; font-variant-numeric:tabular-nums;
+    font-family:"SF Mono",Consolas,monospace; font-size:11px; color:var(--ink);}
+  .lad .arrow{text-align:center; color:var(--ink3); font-size:13px; line-height:1.1; padding:1px 0;}
+  /* specificity matched to .lad .tier (0,2,0) so the bands survive */
+  .lad .t1{background:#F3F4FB;} .lad .t2{background:#F1F7F8;} .lad .t3{background:#FBF1F4;}
+  .lad .t4{background:#FBF8EF;} .lad .t5{background:#F5F0EA;} .lad .t6{background:#F2F8F5;}
+  .exclbox{border:1.4px dashed #CFA062; border-radius:12px; padding:12px 16px; background:rgba(251,240,228,.4);}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>DeepSeek-V4.1-Flash · Memory / Cache Hierarchy <small>— 逐级结构与字节占用</small></h1>
+  <div class="sub">
+    从 HBM 到 Host/SSD 的六级缓存层级，每一级的<b>结构、精度、归属层、每 token 摊销</b>均取自官方
+    <b>inference/model.py</b> 的 buffer 声明与量化调用，维度取自 <b>config.json</b>；字节数由本机脚本现算。
+  </div>
+  <div class="meta">
+    <span class="chip">head_dim=<b>512</b></span>
+    <span class="chip">window=<b>128</b></span>
+    <span class="chip">KV 源层 <b>{2,8,14,20}</b></span>
+    <span class="chip">index 源层 <b>8 层</b></span>
+    <span class="chip">KV 量化 <b>fp4 + E4M3/16ch</b></span>
+    <span class="chip">index 量化 <b>fp4 + E8M0/32ch</b></span>
+    <span class="chip">SWA 量化 <b>fp8 + E8M0/32</b></span>
+    <span class="chip">ctx=<b>1M</b> = 2²⁰ token</span>
+    <span class="chip">GB=<b>10⁹</b>B · MiB=<b>2²⁰</b>B</span>
+  </div>
+</header>
+
+<!-- ===== 0 : 阶梯总览 ===== -->
+<div class="phase" data-n="0" style="border-style:solid;">
+  <div class="ph-title">六级层级总览 <span class="tag">HBM → KV Cache → Index Cache → Engram → Host/SSD → Replay</span></div>
+  <div class="lad">
+    <div class="tier t1"><div class="n">1</div><div class="t">HBM 常驻</div>
+      <div class="d">权重 552B backbone ＋ 全部 cache ＋ engram 表。<b>静态占用</b>，与 seqlen 无关。40 层每层 <code>window_kv_cache</code> 在 <code>__init__</code> 里一次性分配。</div>
+      <div class="v">权重 ~500–552 GB + engram 202.8 GB</div></div>
+    <div class="arrow">↓ 缩小到 seqlen 相关</div>
+    <div class="tier t2"><div class="n">2</div><div class="t">KV Cache</div>
+      <div class="d">两级：<b>SWA 环形窗口</b>（128 槽，不增长）＋ <b>压缩 KV</b>（只有 4 个 kv_source 层拥有，其余层读它们）。</div>
+      <div class="v">SWA 528 B/tok（增量 0） ＋ 压缩 720 B/tok</div></div>
+    <div class="arrow">↓ 索引侧另立一份，精度更低</div>
+    <div class="tier t3"><div class="n">3</div><div class="t">Index Cache</div>
+      <div class="d">indexer 的 K，索引头只有 <b>128 维</b>（vs 主 KV 512），fp4。8 个 index_source 层拥有；Reuse 层直接复用上层算好的 top-k 索引，<b>不占增量</b>。</div>
+      <div class="v">442 B/tok（1M ctx = 442 MiB）</div></div>
+    <div class="arrow">↓ 不是 cache，但同处 HBM 且决定访存</div>
+    <div class="tier t4"><div class="n">4</div><div class="t">Engram</div>
+      <div class="d"><b>查表型</b>：整表常驻但每 token 每层只命中 24 行（L1/L14 两层共 48 行），<b>不随 seqlen 增长</b>。官方 196B 参数，不计入 552B backbone。</div>
+      <div class="v">表 202.8 GB　／　每 tok 读 12.4 KiB</div></div>
+    <div class="arrow">↓ 只有可重建/可换出的部分才下沉</div>
+    <div class="tier t5"><div class="n">5</div><div class="t">Host / SSD</div>
+      <div class="d">持久化压缩 KV ＋ indexer K。<b>SWA 全量刻意不落盘</b>——否则 1M ctx 要多存 20.6 GiB。</div>
+      <div class="v">1M ctx ≈ 1.13 GiB（720+442 MiB）</div></div>
+    <div class="arrow">↓ 缺的 SWA 状态由此重建</div>
+    <div class="tier t6"><div class="n">6</div><div class="t">Replay</div>
+      <div class="d"><b>SWA Bounded Replay</b>：只回放最近 <code>n_win = 128</code> 个 token 即可重建整层 SWA 环，不需持久化。</div>
+      <div class="v">66 KiB / 层　（128 槽 × 528 B）</div></div>
+  </div>
+  <div class="note key" style="margin:12px 0 0 34px;">
+    <b>层级设计的核心不是"分层"，而是"只有少数层真正拥有缓存"。</b>40 层里只有 <b>4 层</b>拥有压缩 KV、<b>8 层</b>拥有 indexer K，
+    其余层全部读归属层的那一份；加上 <b>Reuse 层复用上层的 top-k 索引</b>，才把每 token 的 KV 增量压到 <b>1,162 B</b>（官方口径 890 B）。
+  </div>
+</div>
+
+<!-- ===== 1 : HBM ===== -->
+<div class="phase" data-n="1">
+  <div class="ph-title">① HBM 常驻 <span class="tag">静态，与 seqlen 无关</span></div>
+  <div class="ph-note">所有 buffer 都在 <code>__init__</code> 里按 <code>max_batch_size</code> / <code>max_seq_len</code> 预分配，<code>persistent=False</code>（不进 checkpoint）。</div>
+  <div class="row">
+    <div class="w peach"><div class="op">模型权重</div>
+      <div class="dim">40 层 backbone</div>
+      <div class="par"><span>fp8 主体 + fp4 专家</span><b>552 B 参数</b><span>（原始字节 &lt; 552 GB）</span></div><span class="dtype dt-mix">混合精度</span></div>
+    <div class="flow">＋</div>
+    <div class="w cream"><div class="op">Engram 表</div>
+      <div class="dim">[384006168,256] + [384016682,256]</div>
+      <div class="par"><span>fp8 + E8M0 scale</span><b>202.8 GB</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">＋</div>
+    <div class="w teal"><div class="op">window_kv_cache</div>
+      <div class="dim">40 × [B, 128, 512]</div>
+      <div class="par"><span>fp8 + E8M0/32</span><b>2.58 MiB / B</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">＋</div>
+    <div class="w rose"><div class="op">compress_kv_cache</div>
+      <div class="dim">4 × [B, max_seq//r, 512]</div>
+      <div class="par"><span>fp4 + E4M3/16</span><b>720 MiB @1M</b></div><span class="dtype dt-fp4">fp4</span></div>
+    <div class="flow">＋</div>
+    <div class="w rose"><div class="op">indexer k_cache</div>
+      <div class="dim">8 × [B, max_seq//r, 128]</div>
+      <div class="par"><span>fp4 + E8M0/32</span><b>442 MiB @1M</b></div><span class="dtype dt-fp4">fp4</span></div>
+  </div>
+  <div class="note warn" style="margin:12px 0 0 34px;">
+    <b>注意这里有个反直觉的规模关系：</b>engram 表（202.8 GB）比整个 KV 体系（1M ctx 下约 1.13 GiB）<b>大两个数量级</b>。
+    也就是说 decode 阶段的 HBM 压力主要来自"<b>塞得下多少模型</b>"，而不是"<b>缓存涨得多快</b>"。
+  </div>
+</div>
+
+<!-- ===== 2 : KV Cache ===== -->
+<div class="phase" data-n="2">
+  <div class="ph-title">② KV Cache <span class="tag">两级并存：环形窗口 + 压缩潜向量</span></div>
+  <div class="ph-note">
+    <code>model.py:663-679</code> 明确分两个 buffer。<b>SWA 环</b>每层都有但只有 128 槽；<b>压缩 KV</b>只有 <code>kv_source_layers</code> 拥有，
+    其余层读归属层（<code>shared_attn.compress_kv</code>）。
+  </div>
+
+  <div class="row">
+    <div class="sl"><span class="d" style="background:var(--mint-s)"></span>SWA 环窗口</div>
+    <div class="w teal"><div class="op">window_kv_cache</div>
+      <div class="dim">[B, 128, 512]　<b>写: start_pos % 128 覆盖 1 格</b></div>
+      <div class="par"><span>单 slot</span><b>512 + 16 = 528 B</b></div><span class="dtype dt-fp8">fp8 e4m3</span></div>
+    <div class="flow">→</div>
+    <div class="w cream"><div class="op">每层 ring 总量</div>
+      <div class="dim">128 × 528 B = 66 KiB</div>
+      <div class="par"><span>40 层合计</span><b>2.58 MiB</b><span>恒定</span></div><span class="dtype dt-mem">不增长</span></div>
+    <div class="flow">→</div>
+    <div class="w mint"><div class="op">topk = ring 全部槽</div>
+      <div class="dim">decoder 时每 query 看整个 ring（最旧优先）</div>
+      <div class="par"><span>窗口内可见位置对应</span><b>528 B</b><span>但增长量 = 0</span></div><span class="dtype dt-mem">ring 128</span></div>
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <div class="sl"><span class="d" style="background:var(--rose-s)"></span>压缩 KV 潜向量</div>
+    <div class="w amber"><div class="op">Compressor 输出</div>
+      <div class="dim">softmax 池化 r 个 token → 1 个 512 维 latent</div>
+      <div class="par"><span>Pre-RoPE 存，之后才旋转</span><b>FP32 池化</b></div><span class="dtype dt-fp32">计算用 fp32</span></div>
+    <div class="flow">→</div>
+    <div class="w rose"><div class="op">compress_kv_cache</div>
+      <div class="dim">[B, max_seq//r, 512]　fp4 + <b>E4M3 每 16 通道</b></div>
+      <div class="par"><span>单 slot</span><b>256 + 32 = 288 B</b></div><span class="dtype dt-fp4">fp4 e2m1</span></div>
+    <div class="flow">→</div>
+    <div class="w indigo"><div class="op">归属层与复用</div>
+      <div class="dim">L2/L8/L14 (r=2) · L20 (r=1)；L3–7 读 L2、L9–13 读 L8、L15–19 读 L14、L21–39 读 L20</div>
+      <div class="par"><span>40 层里只有 4 层拥有</span><b>其余零占用</b></div><span class="dtype dt-mem">共享</span></div>
+  </div>
+  <div class="note" style="margin:12px 0 0 34px;">
+    <b>层覆盖的完整性（此前漏了说明）：</b>上表映射覆盖 <b>38 层</b>（4 个拥有层 + 3×5 个读层 + 19 个读层）。
+    剩下的 <b>L0 与 L1 未被覆盖，因为它们本就<i>没有压缩路径</i></b> —— <code>compress_ratios[0] = compress_ratios[1] = 0</code>，
+    这两层是<b>纯滑动窗口注意力</b>（RoPE 也用 θ=10000、关闭 YaRN）。所以 38 + 2 = 40 层完整闭合。<br>
+    单 slot = 512维 × 0.5 B(fp4) + (512/16) × 1 B(E4M3 scale) = <b>256 + 32 = 288 B</b>。
+    r=2 的层每 2 个 token 才产一格，故摊销 <b>144 B/token</b>；r=1 的 L20 是 <b>288 B/token</b>。四层合计 <b>720 B/token</b>。
+  </div>
+</div>
+
+<!-- ===== 3 : Index Cache ===== -->
+<div class="phase" data-n="3">
+  <div class="ph-title">③ Index Cache <span class="tag">索引头只有 128 维，比主 KV 小 4 倍</span></div>
+  <div class="ph-note">
+    indexer 是一路"小侧注意力"：<code>index_n_heads=32</code>、<code>index_head_dim=128</code>。
+    它的 K 由 compressor 的 latent 经 <code>wk</code> 投出，<b>必须在主 KV 被 RoPE 覆写之前先取走</b>（<code>model.py:527-548</code>）。
+  </div>
+  <div class="row">
+    <div class="w rose"><div class="op">indexer.wk → k_norm → RoPE</div>
+      <div class="dim">latent[512] → k[128]，再 fp4 量化</div>
+      <div class="par"><span>wk 只在 4 个 kv 源层有</span><b>owns_k</b></div><span class="dtype dt-bf16">bf16 权重</span></div>
+    <div class="flow">→</div>
+    <div class="w rose"><div class="op">indexer.k_cache</div>
+      <div class="dim">[B, max_seq//r, 128]　fp4 + <b>E8M0 每 32 通道</b></div>
+      <div class="par"><span>单 slot</span><b>64 + 4 = 68 B</b></div><span class="dtype dt-fp4">fp4 e2m1</span></div>
+    <div class="flow">→</div>
+    <div class="w indigo"><div class="op">8 层归属</div>
+      <div class="dim">L2/8/14 (r=2→34 B/tok) · L20/24/28/32/36 (r=1→68 B/tok)</div>
+      <div class="par"><span>合计</span><b>442 B/token</b></div><span class="dtype dt-mem">1M ctx = 442 MiB</span></div>
+    <div class="flow">→</div>
+    <div class="w mint"><div class="op">Reuse 层</div>
+      <div class="dim">直接复用上层已算好的 topk_idxs，本层 indexer 不跑</div>
+      <div class="par"><span>零增量占用</span><b>0</b></div><span class="dtype dt-mem">复用</span></div>
+  </div>
+  <div class="note" style="margin:12px 0 0 34px;">
+    <b>为什么索引缓存能和主 KV 分开量化：</b>两者用途不同 —— 主 KV 要被 <code>sparse_attn</code> 做真正的注意力，
+    索引 K 只用来<b>打分选位置</b>（<code>einsum("bshd,btd->bsht")</code> 后取 top-512），所以能用更粗的 128 维 + fp4。
+    代码里两者的量化参数也不同：压缩 KV 用 <b>16 通道 + E4M3</b>，indexer 用 <b>32 通道 + E8M0</b>（<code>model.py:546</code> vs <code>:760</code>）。
+  </div>
+</div>
+
+<!-- ===== 4 : Engram ===== -->
+<div class="phase" data-n="4">
+  <div class="ph-title">④ Engram <span class="tag">常驻但不按 token 增长</span></div>
+  <div class="ph-note">
+    这是层级图里唯一"<b>体量巨大、访存极小</b>"的一级。表按 (n-gram size, head) 分成互不重叠的 prime 桶段，
+    每个位置在 <b>L1 与 L14 各命中 24 行</b>（两层合计 <b>48 行</b>）。
+  </div>
+  <div class="row">
+    <div class="w cream"><div class="op">ParallelEngramEmbedding</div>
+      <div class="dim">[384006168, 256] ＋ [384016682, 256]　fp8 e4m3</div>
+      <div class="par"><span>数据 + scale(/32)</span><b>202.8 GB</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">→</div>
+    <div class="w mint"><div class="op">查表命中（每层 24 行）</div>
+      <div class="dim">24 × 256 × 1B ＋ 24 × 8 × 1B = <b>6,336 B / 层</b></div>
+      <div class="par"><span>L1 + L14 两层合计</span><b>12,672 B = 12.38 KiB</b></div><span class="dtype dt-mem">仅 48 行</span></div>
+    <div class="flow">→</div>
+    <div class="w teal"><div class="op">engram.wkv（真 Linear）</div>
+      <div class="dim">[1,6144] → [1,25600]　每次必全读</div>
+      <div class="par"><span>2 层合计</span><b>157.3 MB / 层</b></div><span class="dtype dt-fp8">fp8</span></div>
+  </div>
+  <div class="note warn" style="margin:12px 0 0 34px;">
+    <b>层级图里最容易读错的一点：</b>engram 表<b>虽然常驻 HBM 202.8 GB，却不是带宽瓶颈</b>——一个 token 走完全部 40 层时，
+    两层表合计只读 <b>12.38 KiB</b>，相对下面那个权重流量可忽略。<br>
+    但同一级的 <code>engram.wkv</code> 是<b>真正的 Linear</b>（6144→25600），每步必须全量读，两层 314.7 MB —— 这才是这一级的实际访存成本。
+    <b>所以"Engram 在层级里很大"和"Engram 很贵"是两件事。</b><br>
+    <b>关于对照值 15.883 GB/token 的来历</b>（此处应给出推导，否则会被当笔误）：它是 <b>decode 单步的权重读带宽</b>，
+    等于"每 token 激活的 <b>≈15.9B 参数</b> × 各自字节宽"（其中 6 个路由专家是 fp4 半字节，其余 fp8）之和，随本图一起现算。
+    注意它与"552B 全参"的关系是 <b>552 GB ÷ 15.883 GB ≈ 34.8×</b>：<b>只有被激活的那一部分才需要读</b>。<br>
+    官方口径：Engram = <b>196B 参数</b>，"sparsely accessed via token-based lookup"；本机算纯 fp8 数据 196.62 GB（含 scale 202.8 GB），吻合。
+    它<b>不计入 552B backbone</b>。
+  </div>
+</div>
+
+<!-- ===== 5 : Host/SSD ===== -->
+<div class="phase" data-n="5">
+  <div class="ph-title">⑤ Host / SSD <span class="tag">下沉什么</span></div>
+  <div class="ph-note">层级图的第三个取舍：<b>把可重建的踢出去</b>，只持久化不可重建的部分。</div>
+  <div class="row">
+    <div class="w rose"><div class="op">持久化：压缩 KV</div>
+      <div class="dim">4 个 kv_source 层</div>
+      <div class="par"><span>1M ctx</span><b>720 MiB</b></div><span class="dtype dt-ssd">Host/SSD</span></div>
+    <div class="flow">＋</div>
+    <div class="w rose"><div class="op">持久化：indexer K</div>
+      <div class="dim">8 个 index_source 层</div>
+      <div class="par"><span>1M ctx</span><b>442 MiB</b></div><span class="dtype dt-ssd">Host/SSD</span></div>
+    <div class="flow">＝</div>
+    <div class="w cream"><div class="op">持久化总量</div>
+      <div class="dim">1M ctx 单序列</div>
+      <div class="par"><span>官方：降至 V4-Flash 的 1/8</span><b>≈ 1.13 GiB</b></div><span class="dtype dt-ssd">SSD</span></div>
+    <div class="flow">✗</div>
+    <div class="w mint"><div class="op">刻意不持久化：SWA 环</div>
+      <div class="dim">40 层全量落盘将多占 40 × 2²⁰ × 528 B</div>
+      <div class="par"><span>省下</span><b>20.6 GiB</b></div><span class="dtype dt-mem">不落盘</span></div>
+  </div>
+</div>
+
+<!-- ===== 6 : Replay ===== -->
+<div class="phase" data-n="6">
+  <div class="ph-title">⑥ Replay <span class="tag">重建什么</span></div>
+  <div class="ph-note">省下的存储不是免费的：缺失的 SWA 状态要在需要时<b>重算</b>回来。</div>
+  <div class="row">
+    <div class="w mint"><div class="op">SWA Bounded Replay</div>
+      <div class="dim">回放最近 <code>n_win = 128</code> 个 token，重建整层 SWA 环</div>
+      <div class="par"><span>重建成本</span><b>66 KiB / 层</b></div><span class="dtype dt-mem">重算</span></div>
+    <div class="flow">→</div>
+    <div class="w teal"><div class="op">重建后的 ring</div>
+      <div class="dim">与本图②的 window_kv_cache 结构完全一致</div>
+      <div class="par"><span>40 层合计</span><b>2.58 MiB</b></div><span class="dtype dt-fp8">fp8</span></div>
+    <div class="flow">≪</div>
+    <div class="w cream"><div class="op">对比：若全部落盘</div>
+      <div class="dim">40 × 1M × 528 B</div>
+      <div class="par"><span>代价</span><b>20.6 GiB 存储</b></div><span class="dtype dt-ssd">SSD</span></div>
+  </div>
+  <div class="note good" style="margin:12px 0 0 34px;">
+    <b>这笔交易的本质：</b>用 <b>66 KiB/层的重算</b>（回放 128 个 token）换掉 <b>20.6 GiB 的持久化存储</b>。
+    因为 SWA 的可见范围只有窗口那么大，<b>重建它的成本有上界、且与总上下文长度无关</b>——
+    这正是"持久化降到 1/8"的来源：用一点重算换掉绝大部分存储。
+  </div>
+</div>
+
+<!-- ===== 7 : 汇总 ===== -->
+<div class="phase" data-n="7" style="border-style:solid;">
+  <div class="ph-title">每 token 字节占用汇总（本机现算） <span class="tag">两种口径并列，不取其一</span></div>
+  <table class="sum">
+    <tr><th>层级</th><th>精度</th><th>归属</th><th>每 token</th><th>1M ctx 总量</th></tr>
+    <tr><td>① HBM：权重 + engram 表</td><td>fp8/fp4</td><td>静态</td><td>不随 token 增长</td><td>~500–552 GB + 202.8 GB</td></tr>
+    <tr><td>② SWA 环窗口</td><td>fp8 + E8M0/32</td><td>40 层全有，恒定</td><td class="dim">528 B（<b>非增长项</b>）</td><td>2.58 MiB（不增长）</td></tr>
+    <tr><td>② 压缩 KV — L2/L8/L14（r=2）</td><td>fp4 + E4M3/16</td><td>各 1 份，被多层共享</td><td>144 B × 3 = 432 B</td><td>432 MiB</td></tr>
+    <tr><td>② 压缩 KV — L20（r=1）</td><td>fp4 + E4M3/16</td><td>decoder 共享源</td><td>288 B</td><td>288 MiB</td></tr>
+    <tr><td>③ Indexer K（L2/8/14，r=2）</td><td>fp4 + E8M0/32</td><td>各 1 份</td><td>34 B × 3 = 102 B</td><td>102 MiB</td></tr>
+    <tr><td>③ Indexer K（L20/24/28/32/36，r=1）</td><td>fp4 + E8M0/32</td><td>各 1 份</td><td>68 B × 5 = 340 B</td><td>340 MiB</td></tr>
+    <tr><td>④ Engram 表读取（L1+L14，每层 24 行）</td><td>fp8</td><td>常驻，两层合计 48 行</td><td>12,672 B = 12.38 KiB</td><td>不增长</td></tr>
+    <tr><td>④ engram.wkv（真 Linear，每步全读）</td><td>fp8</td><td>2 层</td><td>314.7 MB × 2 = 629.4 MB</td><td>静态</td></tr>
+    <tr class="mid"><td><b>cache 类「真实增长量」（②＋③，剔除 SWA）</b></td><td></td><td></td><td><b>1,162 B/token</b></td><td><b>≈1.13 GiB</b></td></tr>
+    <tr class="tot"><td>cache 类合计（含非增长 SWA 528 B）</td><td></td><td></td><td>1,690 B/token</td><td>≈1.13 GiB</td></tr>
+  </table>
+
+  <div class="note key" style="margin-top:13px;">
+    <b>与官方口径的关系（两种算法并列，请自行判断）：</b><br>
+    官方 model card 给的是 <b>global KV cache = 890 B/token</b>（约 V4-Flash 的 1/4）。<br>
+    · 若按<b>真实增长量</b>（压缩 KV ＋ indexer K）＝ <b>1,162 B/token</b>，为官方的 <b>1.31×</b>。<br>
+    · 若把<b>非增长的 SWA 528 B</b> 也计入 ＝ <b>1,690 B/token</b>，为官方的 <b>1.90×</b>。<br>
+    上一版只摆了 1.90×，容易被误读成"官方口径缩水近一半"；本版两个都列，并标明 SWA 那一项<b>真实增长量是 0</b>。<br>
+    差额（无论取哪个口径都存在）很可能来自 KV / indexer K 在层间的<b>共享口径与去重方式</b>——model card 只给最终压缩后数字，
+    <b>未提供逐项拆分</b>，因此本图<b>不反推 890 的构成</b>。<br>
+    可以确定的是<b>量级与结构</b>：SWA 环是 O(window)=常数、压缩 KV 是 O(seqlen/r)、indexer K 只有 128 维所以远比主 KV 便宜 ——
+    这三条都由 <code>model.py</code> 的 buffer 形状直接决定。
+  </div>
+
+  <div class="note warn" style="margin-top:11px;">
+    <b>需注意的口径与不确定项：</b><br>
+    ① <b>本表算的是"每层每 token 摊销"</b>：SWA 记一个 slot（528 B），压缩 KV 记 288 B/r。这是<b>稳态增长速率</b>，
+    不是某一时刻的瞬时占用（压缩 KV 会攒满整段序列）。<br>
+    ② <b>SWA 的"528 B/token"不是增长量</b>：环形缓冲固定 128 槽、总量恒定 66 KiB/层，<b>真实增长量是 0</b>。
+    该行应读作"窗口内每个可见位置对应的字节"。<br>
+    ③ <b>单位</b>：GB/MB 按 10⁹/10⁶ 字节；MiB/GiB 按 2²⁰/2³⁰。<b><code>1M ctx = 2²⁰ = 1,048,576</code> token</b>——
+    这一点很关键：720 B × 2²⁰ = 720.0 MiB，而 720 B × 10⁶ = 686.6 MiB，两者差 4.6%。<br>
+    ④ <b>batch size 影响</b>：所有 cache 的第一个维度都是 <code>max_batch_size</code>（代码默认 4），本图按 <b>B=1</b> 计。<br>
+    ⑤ <b>权重字节数</b>：552B 是<b>参数个数</b>（官方口径）。因专家为 fp4（0.5 B/参数），实际原始字节<b>小于</b> 552 GB，
+    故图中记 <b>~500–552 GB</b>；552 GB 是"按 1 B/参数上界估"。<br>
+    ⑥ <b>890 B/token</b> 与 <b>1/8 持久化</b> 均为 model card 引用值，非本图推导。
+  </div>
+</div>
+
+<div class="foot">
+  数据来源：<b>deepseek-ai/DeepSeek-V4.1-Flash</b> 的 model card、<code>config.json</code>、<code>inference/config.json</code>、
+  <code>inference/model.py</code>、<code>inference/engram.py</code>（本机下载后逐行核对）。<br>
+  各级结构与精度取自代码中的 buffer 声明与量化调用：<code>window_kv_cache</code>@:663-668 与 <code>act_quant</code>@:707；
+  <code>compress_kv_cache</code>@:669-679 与 <code>fp4_act_quant(latent, 16, …e4m3)</code>@:760；
+  <code>indexer.k_cache</code>@:521-525 与 <code>fp4_act_quant(k, fp4_block_size=32)</code>@:546；<code>owns_k</code>@:500。<br>
+  「890 bytes per token」「1/8 持久化」「Engram 196B」均引自 model card 原文，非本图推导。
+  单位口径：GB = 10⁹ B，MiB = 2²⁰ B，1M ctx = 2²⁰ token。
+</div>
+
+</div>
+</body>
+</html>
