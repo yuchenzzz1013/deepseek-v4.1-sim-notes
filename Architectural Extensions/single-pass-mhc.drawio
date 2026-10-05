@@ -29,7 +29,7 @@
           <mxGeometry height="44" width="190" x="100" y="880" as="geometry" />
         </mxCell>
         <mxCell id="old_fuse" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#94A3B8;fontSize=11;fontColor=#64748B;dashed=1;dashPattern=4 4;" value="直接残差&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;(无门控)&lt;/font&gt;" vertex="1">
-          <mxGeometry height="44" width="190" x="100" y="760" as="geometry" />
+          <mxGeometry height="44" width="190" x="100" y="767" as="geometry" />
         </mxCell>
         <mxCell id="old_q_proj" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#94A3B8;fontSize=11;fontColor=#64748B;dashed=1;dashPattern=4 4;" value="Q Projection&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;(原 mHC)&lt;/font&gt;" vertex="1">
           <mxGeometry height="44" width="190" x="1110" y="1110" as="geometry" />
@@ -55,8 +55,8 @@
         <mxCell id="e_old_group_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2;fontColor=#B45309;" value="优化为" vertex="1">
           <mxGeometry height="16" width="60" x="340" y="930" as="geometry" />
         </mxCell>
-        <mxCell id="old_iter_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#64748B;" value="N× 迭代" vertex="1">
-          <mxGeometry height="20" width="60" x="300" y="920" as="geometry" />
+        <mxCell id="old_iter_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;fontStyle=2;fontColor=#64748B;" value="N× 迭代&lt;div&gt;（实际是从RMSNorm开始）&lt;/div&gt;" vertex="1">
+          <mxGeometry height="20" width="150" x="190" y="952" as="geometry" />
         </mxCell>
         <mxCell id="e_old_score_comp" edge="1" parent="1" source="old_score" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeWidth=1.2;endArrow=classic;endFill=1;endSize=6;strokeColor=#94A3B8;dashed=1;dashPattern=4 4;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="old_compress">
           <mxGeometry relative="1" as="geometry" />
@@ -71,10 +71,10 @@
           <mxGeometry height="16" width="200" x="490" y="130" as="geometry" />
         </mxCell>
         <mxCell id="swa_block" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontSize=12;fontColor=#1E293B;" value="SWA Block ×2&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#64748B&quot;&gt;Encoder Layer ×N&lt;br&gt;RMSNorm → SWA → Residual&lt;br&gt;RMSNorm → FFN → Residual&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="280" x="522" y="160" as="geometry" />
+          <mxGeometry height="80" width="280" x="520" y="160" as="geometry" />
         </mxCell>
         <mxCell id="enc_in" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontSize=12;fontColor=#1E293B;" value="Encoder Input Hidden States&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#64748B&quot;&gt;[B, S, D]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="54" width="280" x="521" y="280" as="geometry" />
+          <mxGeometry height="54" width="280" x="520" y="280" as="geometry" />
         </mxCell>
         <mxCell id="grp_mhc" parent="1" style="rounded=1;arcSize=4;dashed=1;dashPattern=4 4;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#CBD5E1;strokeWidth=1;" value="" vertex="1">
           <mxGeometry height="1280" width="700" x="460" y="380" as="geometry" />
@@ -104,7 +104,7 @@
           <mxGeometry height="64" width="280" x="520" y="960" as="geometry" />
         </mxCell>
         <mxCell id="badge_1x" parent="1" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#F59E0B;strokeColor=none;fontSize=11;fontColor=#FFFFFF;fontStyle=1;" value="1× pass" vertex="1">
-          <mxGeometry height="22" width="70" x="816" y="981" as="geometry" />
+          <mxGeometry height="22" width="70" x="824" y="981" as="geometry" />
         </mxCell>
         <mxCell id="mhc_fuse" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#FFF7ED;strokeColor=#F59E0B;strokeWidth=2;fontSize=12;fontColor=#1E293B;" value="Gated Fuse&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#92400E&quot;&gt;u&lt;sub&gt;s,h&lt;/sub&gt; = V&lt;sub&gt;s,h&lt;/sub&gt; + g&lt;sub&gt;s,h&lt;/sub&gt; ⊙ z&lt;sub&gt;h&lt;/sub&gt;&lt;br&gt;[B, S, H, d&lt;sub&gt;h&lt;/sub&gt;]&lt;/font&gt;" vertex="1">
           <mxGeometry height="64" width="280" x="520" y="820" as="geometry" />
@@ -134,7 +134,7 @@
           <mxGeometry height="350" width="1120" x="80" y="1760" as="geometry" />
         </mxCell>
         <mxCell id="hdr_input" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;fontColor=#475569;" value="输入编码区 (Input Encoding)" vertex="1">
-          <mxGeometry height="16" width="300" x="110" y="1770" as="geometry" />
+          <mxGeometry height="16" width="300" x="570" y="1784" as="geometry" />
         </mxCell>
         <mxCell id="proj_t" parent="1" style="rounded=1;arcSize=18;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontSize=12;fontColor=#1E293B;" value="Modality Projector W&lt;sub&gt;t&lt;/sub&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#64748B&quot;&gt;D&lt;sub&gt;t&lt;/sub&gt; → D&lt;/font&gt;" vertex="1">
           <mxGeometry height="50" width="280" x="120" y="1800" as="geometry" />
