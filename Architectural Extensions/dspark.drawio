@@ -1,88 +1,95 @@
 <mxfile host="app.diagrams.net">
-  <diagram id="dsparkInfer" name="DSpark - Inference Dataflow">
-    <mxGraphModel dx="1300" dy="900" grid="0" gridSize="10" guides="0" tooltips="1" connect="0" arrows="1" fold="1" page="0" pageScale="1" pageWidth="900" pageHeight="1060" background="light-dark(#FFFFFF,#121212)" math="0" shadow="0">
+  <diagram name="第 1 页" id="Tk_pgBD9uxxeB6qSvvcl">
+    <mxGraphModel dx="721" dy="397" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="in_state" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;" value="Decoding State&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;last accepted token + target hidden h&lt;sub&gt;t&lt;/sub&gt;&lt;br&gt;[B, 1, D]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="52" width="220" x="350" y="940" as="geometry" />
+        <mxCell id="ttl" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1A1A1A;" value="DSpark — Confidence-Scheduled Speculative Decoding" vertex="1">
+          <mxGeometry height="36" width="1000" x="80" y="230" as="geometry" />
         </mxCell>
-        <mxCell id="draft_bb" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;" value="Draft Backbone&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;lightweight, few layers&lt;br&gt;[B, 1, D&lt;sub&gt;d&lt;/sub&gt;]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="52" width="220" x="350" y="850" as="geometry" />
+        <mxCell id="in_state" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Decoding State&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;anchor token x&lt;sub&gt;0&lt;/sub&gt; + target hidden h&lt;sub&gt;t&lt;/sub&gt;&lt;br&gt;[B, 1, D]&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="260" x="400" y="950" as="geometry" />
         </mxCell>
-        <mxCell id="par_head" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=12;fontColor=#333333;" value="Parallel Draft Head&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;γ positions emitted in one shot&lt;br&gt;[B, γ, V]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="60" width="220" x="350" y="752" as="geometry" />
+        <mxCell id="draft" parent="1" style="rounded=1;arcSize=15;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Draft Backbone + Markov Head&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;半自回归 · anchor-first&lt;br&gt;并行主干 + 低秩 Markov 转移偏置（rank=256）&lt;br&gt;从左到右顺序采样，叠加前一个已采样 token 的 bias&lt;br&gt;[B, γ, V]（含锚点；γ=5 配置，草稿 γ-1）&lt;/font&gt;" vertex="1">
+          <mxGeometry height="82" width="260" x="400" y="830" as="geometry" />
         </mxCell>
-        <mxCell id="serial" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=12;fontColor=#333333;" value="Semi-Autoregressive Refinement&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;lightweight serial module over the block&lt;br&gt;models intra-block token dependency → [B, γ, D]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="60" width="220" x="350" y="654" as="geometry" />
+        <mxCell id="conf_head" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Confidence Head&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;条件接受概率 c&lt;sub&gt;k&lt;/sub&gt; = σ(proj([h&lt;sub&gt;k&lt;/sub&gt;; markov_embed&lt;sub&gt;k-1&lt;/sub&gt;]))&lt;br&gt;STS 校准：left-to-right grid search · 基于历史 accept 统计&lt;br&gt;拼接 Markov prev-token embedding（默认开启）&lt;br&gt;[B, γ]&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="460" x="300" y="730" as="geometry" />
         </mxCell>
-        <mxCell id="conf_head" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=12;fontColor=#333333;" value="Confidence Head&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;c&lt;sub&gt;i&lt;/sub&gt; = P(draft i survives verification)&lt;br&gt;[B, γ]&lt;/font&gt;" vertex="1">
-          <mxGeometry height="60" width="220" x="350" y="556" as="geometry" />
+        <mxCell id="sched" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Confidence-Scheduled Prefix Scheduler&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;max Θ = τ · SPS(B)&lt;br&gt;τ = Σ&lt;sub&gt;r&lt;/sub&gt; Π&lt;sub&gt;j≤k&lt;/sub&gt; c&lt;sub&gt;r,j&lt;/sub&gt;（全局存活概率累积）&lt;br&gt;B=全局 top-B 预算 · s.t. L ≤ γ&lt;br&gt;实现 Algorithm 1：smooth-SPS 假设下贪心选择&lt;br&gt;异步：CPU sizing · GPU slot · ZOS（Zero-Overhead Scheduler） · CUDA-graph&lt;/font&gt;" vertex="1">
+          <mxGeometry height="110" width="460" x="300" y="588" as="geometry" />
         </mxCell>
-        <mxCell id="sched" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;" value="Confidence-Scheduled Prefix Scheduler&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;hardware-aware · truncation length L ≤ γ&lt;br&gt;uses engine load + last-2-step accept history&lt;/font&gt;" vertex="1">
-          <mxGeometry height="70" width="220" x="350" y="440" as="geometry" />
+        <mxCell id="verif" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Target Model Verification (Lossless)&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#555555&quot;&gt;拒绝采样 · 残差 bonus token&lt;br&gt;输出分布严格一致&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="460" x="300" y="490" as="geometry" />
         </mxCell>
-        <mxCell id="sched_note" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2;fontColor=#777777;" value="async scheduling · zero-overhead (ZOS) · CUDA-graph replay" vertex="1">
-          <mxGeometry height="18" width="220" x="350" y="516" as="geometry" />
+        <mxCell id="emit" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=12;fontColor=#333333;shadow=0;strokeWidth=2;" value="Emit Accepted Tokens&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;更新 decoding state&lt;br&gt;next step ↺&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="260" x="400" y="390" as="geometry" />
         </mxCell>
-        <mxCell id="verif" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;" value="Target Model Verification&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;one parallel forward over the L drafts&lt;br&gt;accept the longest matching prefix (lossless)&lt;/font&gt;" vertex="1">
-          <mxGeometry height="60" width="220" x="350" y="342" as="geometry" />
-        </mxCell>
-        <mxCell id="emit" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#999999;fontSize=12;fontColor=#333333;" value="Emit Accepted Tokens&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;advance the decoding state&lt;/font&gt;" vertex="1">
-          <mxGeometry height="52" width="220" x="350" y="250" as="geometry" />
-        </mxCell>
-        <mxCell id="engine_load" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;fontColor=#333333;" value="Engine Throughput&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;real-time batch load&lt;/font&gt;" vertex="1">
-          <mxGeometry height="92" width="200" x="660" y="430" as="geometry" />
-        </mxCell>
-        <mxCell id="hist2" parent="1" style="rounded=1;arcSize=20;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontSize=12;fontColor=#333333;" value="Accept History&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#777777&quot;&gt;last 2 steps:&lt;br&gt;predicted vs actually accepted&lt;/font&gt;" vertex="1">
-          <mxGeometry height="92" width="200" x="660" y="530" as="geometry" />
-        </mxCell>
-        <mxCell id="loop_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2;fontColor=#777777;" value="↺ next step" vertex="1">
-          <mxGeometry height="18" width="90" x="196" y="605" as="geometry" />
-        </mxCell>
-        <mxCell id="ttl" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;fontColor=#222222;" value="DSpark — inference dataflow (speculative decoding)" vertex="1">
-          <mxGeometry height="32" width="900" y="40" as="geometry" />
-        </mxCell>
-        <mxCell id="sub" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=2;fontColor=#666666;" value="semi-autoregressive draft + confidence-scheduled verification · per decoding step · bottom → top" vertex="1">
-          <mxGeometry height="20" width="900" y="76" as="geometry" />
-        </mxCell>
-        <mxCell id="e_in_bb" edge="1" parent="1" source="in_state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="draft_bb">
+        <mxCell id="e_in_draft" edge="1" parent="1" source="in_state" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;" target="draft">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_bb_ph" edge="1" parent="1" source="draft_bb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="par_head">
+        <mxCell id="e_draft_ch" edge="1" parent="1" source="draft" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;" target="conf_head">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_ph_sr" edge="1" parent="1" source="par_head" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="serial">
+        <mxCell id="e_ch_sc" edge="1" parent="1" source="conf_head" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;" target="sched">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_sr_ch" edge="1" parent="1" source="serial" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="conf_head">
+        <mxCell id="e_sc_vf" edge="1" parent="1" source="sched" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;" target="verif">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_ch_sc" edge="1" parent="1" source="conf_head" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="sched">
+        <mxCell id="e_vf_em" edge="1" parent="1" source="verif" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;" target="emit">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_sc_vf" edge="1" parent="1" source="sched" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="verif">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e_vf_em" edge="1" parent="1" source="verif" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;" target="emit">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e_load_sc" edge="1" parent="1" source="engine_load" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.514;entryDx=0;entryDy=0;" target="sched">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e_hist_sc" edge="1" parent="1" source="hist2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.8;entryDx=0;entryDy=0;" target="sched">
+        <mxCell id="e_loop" edge="1" parent="1" source="emit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=2;endArrow=classic;endFill=1;endSize=7;strokeColor=#1A1A1A;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="in_state">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="610" y="576" />
-              <mxPoint x="610" y="496" />
+              <mxPoint x="240" y="418" />
+              <mxPoint x="240" y="978" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_loop" edge="1" parent="1" source="emit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;jettySize=0;html=1;strokeWidth=1.5;endArrow=classic;endFill=1;endSize=6;strokeColor=#1A1A1A;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="in_state">
+        <mxCell id="loop_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=10;fontStyle=2;fontColor=#666666;" value="↺ next step" vertex="1">
+          <mxGeometry height="18" width="80" x="160" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_reject" parent="1" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FDF2F2;strokeColor=#B85450;fontSize=10;fontColor=#333333;shadow=0;dashed=1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" value="&lt;b&gt;Lossless Rejection Sampling&lt;/b&gt;&lt;br&gt;• temperature=0: greedy verify (lossless)&lt;br&gt;• temperature&amp;gt;0: P(accept x&lt;sub&gt;k&lt;/sub&gt; | x&lt;sub&gt;1..k-1&lt;/sub&gt; accepted) = min(1, p&lt;sup&gt;t&lt;/sup&gt;&lt;sub&gt;k&lt;/sub&gt;(x&lt;sub&gt;k&lt;/sub&gt;)/p&lt;sup&gt;d&lt;/sup&gt;&lt;sub&gt;k&lt;/sub&gt;(x&lt;sub&gt;k&lt;/sub&gt;))&lt;br&gt;• 首个拒绝位置 k → 丢弃 k+1..γ&lt;br&gt;• 残差采样 bonus token: p&lt;sub&gt;res&lt;/sub&gt; ∝ max(0, p&lt;sup&gt;t&lt;/sup&gt; - p&lt;sup&gt;d&lt;/sup&gt;) / ||·||&lt;sub&gt;1&lt;/sub&gt;" vertex="1">
+          <mxGeometry height="88" width="390" x="800" y="481" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_reject" edge="1" parent="1" source="detail_reject" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;endArrow=open;endFill=0;dashed=1;strokeColor=#B85450;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="verif">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_sched" parent="1" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#FFF9E6;strokeColor=#D6B656;fontSize=10;fontColor=#333333;shadow=0;dashed=1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" value="&lt;b&gt;Hardware-Aware Scheduler&lt;/b&gt;&lt;br&gt;• 目标: max Θ = τ · SPS(B)&lt;br&gt;• τ = Σ&lt;sub&gt;r&lt;/sub&gt; Π&lt;sub&gt;j≤k&lt;/sub&gt; c&lt;sub&gt;r,j&lt;/sub&gt;（全局存活概率累积）&lt;br&gt;• B = 全局 top-B 预算，非初始 block 大小&lt;br&gt;• SPS(B): 离线预剖析的离散 SPS 表（以 CUDA-graph 预配置尺寸为索引，需插值）&lt;br&gt;• 实现 Algorithm 1，基于 smooth-SPS 假设贪心选择 L ≤ γ&lt;br&gt;• 异步：CPU sizing · GPU slot 分配 · ZOS（Zero-Overhead Scheduler） · 全局存活概率排序" vertex="1">
+          <mxGeometry height="115" width="390" x="800" y="586" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_sched" edge="1" parent="1" source="detail_sched" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;endArrow=open;endFill=0;dashed=1;strokeColor=#D6B656;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="sched">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_conf" parent="1" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F5F0FA;strokeColor=#9673A6;fontSize=10;fontColor=#333333;shadow=0;dashed=1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" value="&lt;b&gt;Confidence Head &amp; STS&lt;/b&gt;&lt;br&gt;• c&lt;sub&gt;k&lt;/sub&gt; = σ(proj([h&lt;sub&gt;k&lt;/sub&gt;; markov_embed&lt;sub&gt;k-1&lt;/sub&gt;]))&lt;br&gt;• markov_embed&lt;sub&gt;k-1&lt;/sub&gt; = W&lt;sub&gt;1&lt;/sub&gt;[x&lt;sub&gt;k-1&lt;/sub&gt;]（可选拼接）&lt;br&gt;• 条件: P(draft k survives | prefix 1..k-1 accepted)&lt;br&gt;• STS 校准: left-to-right grid search&lt;br&gt;• 基于历史 accept 统计&lt;br&gt;• 输出 [B, γ]" vertex="1">
+          <mxGeometry height="115" width="260" x="800" y="713" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_conf" edge="1" parent="1" source="detail_conf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;endArrow=open;endFill=0;dashed=1;strokeColor=#9673A6;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="conf_head">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_markov" parent="1" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F0F5FA;strokeColor=#6C8EBF;fontSize=10;fontColor=#333333;shadow=0;dashed=1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" value="&lt;b&gt;Markov Head 细节&lt;/b&gt;&lt;br&gt;• 并行主干输出 U&lt;sub&gt;k&lt;/sub&gt; ∈ [B, γ, V]（含锚点；γ=5）&lt;br&gt;• Markov 头: B(x&lt;sub&gt;k-1&lt;/sub&gt;,·) = W&lt;sub&gt;1&lt;/sub&gt;[x&lt;sub&gt;k-1&lt;/sub&gt;] W&lt;sub&gt;2&lt;/sub&gt;, rank r=256&lt;br&gt;• 融合: p&lt;sub&gt;k&lt;/sub&gt;(v) ∝ exp(U&lt;sub&gt;k&lt;/sub&gt;(v) + B&lt;sub&gt;k&lt;/sub&gt;(v))&lt;br&gt;• 从左到右顺序采样，条件于前一个实际采样 token&lt;br&gt;• 变体: Vanilla / Gated / RNN；Gated 为默认推荐" vertex="1">
+          <mxGeometry height="110" width="260" x="800" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="detail_loss" parent="1" style="rounded=1;arcSize=10;whiteSpace=wrap;html=1;fillColor=#F0F5FA;strokeColor=#6C8EBF;fontSize=10;fontColor=#333333;shadow=0;dashed=1;strokeWidth=1.5;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;" value="&lt;b&gt;Draft 训练目标&lt;/b&gt;&lt;br&gt;• L = 0.1·L&lt;sub&gt;CE&lt;/sub&gt; + 0.9·L&lt;sub&gt;TV&lt;/sub&gt; + 1.0·L&lt;sub&gt;Conf&lt;/sub&gt;&lt;br&gt;• L&lt;sub&gt;TV&lt;/sub&gt; = ||p&lt;sub&gt;draft&lt;/sub&gt; - p&lt;sub&gt;target&lt;/sub&gt;||&lt;sub&gt;1&lt;/sub&gt;（接受率代理）&lt;br&gt;• L&lt;sub&gt;Conf&lt;/sub&gt;: 二元交叉熵&lt;br&gt;• 监督信号: accept_rate = 1 - d&lt;sub&gt;TV&lt;/sub&gt; = 1 - L&lt;sub&gt;TV&lt;/sub&gt;/2&lt;br&gt;• d&lt;sub&gt;TV&lt;/sub&gt; = 0.5·||p&lt;sub&gt;d&lt;/sub&gt; - p&lt;sub&gt;t&lt;/sub&gt;||&lt;sub&gt;1&lt;/sub&gt;&lt;br&gt;• 后训练阶段继续对齐，梯度不回传到 backbone" vertex="1">
+          <mxGeometry height="115" width="260" x="800" y="1023" as="geometry" />
+        </mxCell>
+        <mxCell id="e_detail_markov" edge="1" parent="1" source="detail_markov" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;endArrow=open;endFill=0;dashed=1;strokeColor=#6C8EBF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="draft">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="290" y="276" />
-              <mxPoint x="290" y="966" />
+              <mxPoint x="700" y="945" />
+              <mxPoint x="700" y="871" />
+              <mxPoint x="660" y="871" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_detail_loss" edge="1" parent="1" source="detail_loss" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeWidth=1.5;endArrow=open;endFill=0;dashed=1;strokeColor=#6C8EBF;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="draft">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="1080" />
+              <mxPoint x="700" y="871" />
+              <mxPoint x="660" y="871" />
             </Array>
           </mxGeometry>
         </mxCell>
